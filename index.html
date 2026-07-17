@@ -186,10 +186,10 @@
     animation: pulse 1.5s infinite;
   }
   .breath-btn.hidden { display: none; }
-
+  
   #s6 h2.title-gold {
-  margin-top: 20px;    /* Pushes the heading down away from the top edge */
-  margin-bottom: 24px; /* Keeps the breathing space below the heading */
+  margin-top: 20px;
+  margin-bottom: 24px; /* Adjust this number higher if you want even more space */
 }
 
   /* ---- Screen 6: Gallery ---- */
@@ -328,7 +328,11 @@
   .letter-card.show{opacity:1; transform:translateY(0);}
   .letter-card p{font-size:14px; line-height:1.65; margin:0 0 12px; font-family:'Great Vibes',cursive; font-size:20px; color:#ffe9d6;}
   .letter-card p:first-child{color:var(--gold); font-size:22px;}
-  .letter-card p.signature {text-align: right; margin-top: 20px;}
+  .letter-card p.signature {
+  text-align: right;
+  margin-top: 20px;
+  margin-bottom: 40px;
+}
 
   .music-toggle{
     position:fixed; top:16px; right:16px; z-index:10; width:42px; height:42px; border-radius:50%;
@@ -512,7 +516,7 @@
       <div class="scratch-wrap" id="scratchWrap">
         <div class="scratch-under" id="scratchRevealContainer">
           <div class="scratch-text">
-            You are the best thing that has ever happened to me, Bawaa 💗
+            You are the best thing that happened to this year, Bawaa 💗
           </div>
         </div>
         <canvas class="scratch-canvas" id="scratchCanvas"></canvas>
@@ -530,7 +534,7 @@
       <div class="envelope-icon-fancy" id="envelopeIcon">✉️</div>
     </div>
     <h2 class="title-gold" style="font-size:28px; margin-top:20px;">A Letter Just For You</h2>
-    <p class="sub" id="envelopeHint">Tap to open 💌</p>
+    <p class="sub" id="envelopeHint">Tap on the letter above to open 💌</p>
     <div class="letter-card" id="letterCard"></div>
     <button class="btn ghost" id="watchAgainBtn" style="display:none;" onclick="goTo(12)">Continue →</button>
   </section>
@@ -638,6 +642,7 @@ for(let i=0;i<8;i++){
 const screens = ['s0','s1','s2','s3','s4','s5','s6','s7','s8','s9','s10','s11', 's12'];
 let currentIndex = 0;
 let hasBlownCandleOnce = false;
+let letterTimer = null;
 
 function goTo(i){
   currentIndex = i;
@@ -647,28 +652,125 @@ function goTo(i){
   document.querySelector('.app').scrollTop = 0;
   tryPlayMusic();
   
-  // Clean mic listener context if moving away from cake
   if(screens[i] !== 's5') { stopBreathListening(); }
 
+  // Screen 0 Reset
   if(screens[i]==='s0'){
     giftOpened = false;
     document.getElementById('giftWrap').classList.remove('opening');
     document.getElementById('giftEmoji').textContent = '🎁';
     document.getElementById('giftBurst').classList.remove('show');
   }
-  if(screens[i]==='s1'){ pinEntered=''; refreshDots(); pinErrorEl.textContent=''; document.getElementById('lockIcon').classList.remove('unlocked'); }
-  if(screens[i]==='s2'){
-    document.getElementById('curtainBg').classList.remove('open');
-    document.getElementById('curtainPanel').classList.remove('hide');
+  
+  // Screen 1 Reset
+  if(screens[i]==='s1'){ 
+    pinEntered=''; 
+    refreshDots(); 
+    pinErrorEl.textContent='\u00A0'; 
+    document.getElementById('lockIcon').classList.remove('unlocked'); 
   }
+  
+  // Screen 2 Reset
+    // Screen 2 Reset (Curtain)
+  if(screens[i]==='s2'){
+    const leftCurtain = document.querySelector('.curtain-left');
+    const rightCurtain = document.querySelector('.curtain-right');
+    const panel = document.getElementById('curtainPanel');
+    const bg = document.getElementById('curtainBg');
+
+    // 1. Temporarily kill the transitions so they snap back invisibly
+    leftCurtain.style.transition = 'none';
+    rightCurtain.style.transition = 'none';
+    
+    // 2. Remove the open states
+    bg.classList.remove('open');
+    panel.classList.remove('hide');
+
+    // 3. Force a quick browser reflow, then restore the transitions for the next open action
+    void bg.offsetWidth; 
+    leftCurtain.style.transition = 'transform 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+    rightCurtain.style.transition = 'transform 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+  }
+
+  
   if(screens[i]==='s3') startLoading();
-  if(screens[i]==='s4') startTypewriter();
-  if(screens[i]==='s5') initCounter();
-  if(screens[i]==='s6') initGallery();
-  if(screens[i]==='s7') initBalloons();
-  if(screens[i]==='s9') initPuzzle();
-  if(screens[i]==='s10') initScratch();
+  
+  // Screen 4 Reset
+  if(screens[i]==='s4') {
+    typewriterDone = false;
+    document.getElementById('specialContinue').style.display = 'none'; // ADD THIS LINE: Hides button immediately on reset
+    startTypewriter();
+  }
+  
+  // Screen 5 Reset
+  if(screens[i]==='s5') {
+    initCounter();
+    document.querySelectorAll('.candle').forEach(c => c.classList.remove('out'));
+    document.getElementById('relightBtn').classList.add('hidden');
+    document.getElementById('cakeInstruction').classList.remove('hidden');
+    document.getElementById('breathBtn').classList.remove('hidden');
+    document.getElementById('cakeContinue').classList.add('hidden-btn');
+  }
+  
+  // Screen 6 Reset
+  if(screens[i]==='s6') {
+    galleryIndex = 0;
+    const imgs = document.querySelectorAll('#carousel img');
+    const dots = document.querySelectorAll('#galleryDots span');
+    if(imgs.length) {
+      imgs.forEach((img, idx) => img.classList.toggle('show', idx === 0));
+      dots.forEach((dot, idx) => dot.classList.toggle('on', idx === 0));
+      document.getElementById('caption').textContent = CONFIG.photos[0].caption;
+    }
+    initGallery();
+  }
+  
+  // Screen 7 Reset
+  if(screens[i]==='s7') {
+    poppedCount = 0;
+    document.getElementById('wishReveal').textContent = '\u00A0';
+    document.getElementById('popCount').textContent = 'Popped 0/6';
+    document.getElementById('balloonContinue').disabled = true;
+    document.querySelectorAll('.balloon').forEach(b => {
+      b.classList.remove('popped', 'pop-anim');
+    });
+    initBalloons();
+  }
+  
+  // Screen 9 Reset
+  if(screens[i]==='s9') {
+    puzzleBuilt = false; 
+    initPuzzle();
+  }
+  
+  // Screen 10 Reset
+  if(screens[i]==='s10') {
+    scratchInit = false; 
+    document.getElementById('scratchProgress').style.width = '0%';
+    document.getElementById('scratchContinue').disabled = true;
+    const canvas = document.getElementById('scratchCanvas');
+    if(canvas) canvas.style.opacity = '1';
+    initScratch();
+  }
+  
+  // Screen 11 Reset
+  if(screens[i]==='s11') {
+  if(letterTimer) {
+      clearInterval(letterTimer);
+      letterTimer = null;
+    }
+    letterOpened = false;
+    const envWrapper = document.getElementById('envelopeWrapper');
+    envWrapper.style.display = 'flex';
+    envWrapper.classList.remove('open-anim');
+    document.getElementById('envelopeIcon').style.opacity = '1';
+    document.getElementById('envelopeHint').style.display = 'block';
+    document.getElementById('letterCard').classList.remove('show');
+    document.getElementById('letterCard').innerHTML = '';
+    document.getElementById('watchAgainBtn').style.display = 'none';
+  }
 }
+
 function goBack(){
   if(currentIndex > 0) goTo(currentIndex - 1);
 }
@@ -680,14 +782,16 @@ function startLoading(){
 const bgm = document.getElementById('bgm');
 const musicToggle = document.getElementById('musicToggle');
 let musicOn = false;
+let userManuallyMuted = false; // Tracks if the user chose silence
+
 musicToggle.onclick = ()=>{
   musicOn = !musicOn;
+  userManuallyMuted = !musicOn; // Remembers explicit mute choice
   musicToggle.textContent = musicOn ? '🔊' : '🔇';
   if(musicOn){ bgm.volume = 0.5; bgm.play().catch(()=>{}); } else { bgm.pause(); }
 };
 function tryPlayMusic(){ if(musicOn){ bgm.play().catch(()=>{}); } }
 
-/* ---------------- 0: Gift intro ---------------- */
 let giftOpened = false;
 function openGift(){
   if(giftOpened) return;
@@ -695,7 +799,14 @@ function openGift(){
   document.getElementById('giftWrap').classList.add('opening');
   const burst = document.getElementById('giftBurst');
   burst.classList.add('show');
-  musicOn = true; musicToggle.textContent = '🔊'; bgm.volume = 0.5; bgm.play().catch(()=>{});
+  
+  // Only turn on music if they haven't explicitly muted it before
+  if (!userManuallyMuted) {
+    musicOn = true; 
+    musicToggle.textContent = '🔊'; 
+    bgm.volume = 0.5; 
+    bgm.play().catch(()=>{});
+  }
   setTimeout(()=>goTo(1), 700);
 }
 
@@ -1190,19 +1301,21 @@ function typeLetter(card, pIndex){
   card.appendChild(p);
   const text = CONFIG.letter[pIndex];
   let i = 0;
-  const timer = setInterval(()=>{
+  
+  // FIX: Clear any lingering interval just in case before starting a new paragraph
+  if(letterTimer) clearInterval(letterTimer);
+
+  letterTimer = setInterval(()=>{
     i++;
     p.innerHTML = text.slice(0,i) + '<span class="cursor">&nbsp;</span>';
     card.scrollTop = card.scrollHeight;
     if(i >= text.length){
-      clearInterval(timer);
+      clearInterval(letterTimer);
       p.innerHTML = text;
       
-      // THIS IS THE NEW FIX: 
-      // It checks if it just finished typing the absolute last line ("— Babae").
-      // If yes, it tags it with the signature class to slide it over to the right.
       if(pIndex === CONFIG.letter.length - 1) {
         p.className = 'signature';
+        setTimeout(() => { card.scrollTop = card.scrollHeight; }, 50);
       }
       
       setTimeout(()=>typeLetter(card, pIndex+1), 350);
@@ -1210,7 +1323,10 @@ function typeLetter(card, pIndex){
   }, 32);
 }
 
-function restart(){ location.reload(); }
+function restart(){ 
+  // Loop back cleanly to the first screen without reloading the page
+  goTo(0); 
+}
 
 /* ---------------- Confetti ---------------- */
 function launchConfetti(){
