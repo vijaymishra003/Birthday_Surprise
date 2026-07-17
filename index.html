@@ -323,7 +323,7 @@
   .letter-card.show{opacity:1; transform:translateY(0);}
   .letter-card p{font-size:14px; line-height:1.65; margin:0 0 12px; font-family:'Great Vibes',cursive; font-size:20px; color:#ffe9d6;}
   .letter-card p:first-child{color:var(--gold); font-size:22px;}
-  .letter-card p:last-child {text-align: right; margin-top: 20px;}
+  .letter-card p.signature {text-align: right; margin-top: 20px;}
 
   .music-toggle{
     position:fixed; top:16px; right:16px; z-index:10; width:42px; height:42px; border-radius:50%;
@@ -1177,6 +1177,8 @@ function openLetter(){
 }
 function typeLetter(card, pIndex){
   if(pIndex >= CONFIG.letter.length){
+  function typeLetter(card, pIndex){
+  if(pIndex >= CONFIG.letter.length){
     document.getElementById('watchAgainBtn').style.display = 'inline-block';
     return;
   }
@@ -1192,10 +1194,14 @@ function typeLetter(card, pIndex){
     if(i >= text.length){
       clearInterval(timer);
       p.innerHTML = text;
+      if(pIndex === CONFIG.letter.length - 1) {
+        p.className = 'signature';
+      }
       setTimeout(()=>typeLetter(card, pIndex+1), 350);
     }
   }, 32);
 }
+
 function restart(){ location.reload(); }
 
 /* ---------------- Confetti ---------------- */
