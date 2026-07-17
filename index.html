@@ -1177,8 +1177,6 @@ function openLetter(){
 }
 function typeLetter(card, pIndex){
   if(pIndex >= CONFIG.letter.length){
-  function typeLetter(card, pIndex){
-  if(pIndex >= CONFIG.letter.length){
     document.getElementById('watchAgainBtn').style.display = 'inline-block';
     return;
   }
@@ -1194,9 +1192,14 @@ function typeLetter(card, pIndex){
     if(i >= text.length){
       clearInterval(timer);
       p.innerHTML = text;
+      
+      // THIS IS THE NEW FIX: 
+      // It checks if it just finished typing the absolute last line ("— Babae").
+      // If yes, it tags it with the signature class to slide it over to the right.
       if(pIndex === CONFIG.letter.length - 1) {
         p.className = 'signature';
       }
+      
       setTimeout(()=>typeLetter(card, pIndex+1), 350);
     }
   }, 32);
